@@ -1,0 +1,17 @@
+{
+  "name": "secure-project",
+  "version": "1.0.0",
+  "description": "Secure Project",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm start --prefix frontend",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
