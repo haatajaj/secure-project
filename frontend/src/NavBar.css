@@ -1,0 +1,11 @@
+ul {
+    text-align: center;
+    display: flex;
+}
+
+li {
+    font-size: 15px;
+    margin: 0 10px;
+    line-height: 60px;
+    display: inline-block;
+  }
