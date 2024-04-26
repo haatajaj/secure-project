@@ -30,6 +30,21 @@ const Login = () => {
             setPasswordErr("Enter valid password")
         }
 
+        fetch("http://localhost:3002/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({username, password})
+        })
+        .then((res) => res.json())
+        .then((data) => {
+            console.log(data);
+        })
+        .catch((err) => {
+            console.log(err);
+        })
+
     }
 
     return (
