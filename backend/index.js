@@ -26,12 +26,20 @@ app.get("/", (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-    const username = "testuser2"
-    const password = "Salasana123"
-    const email = "test2@email.com"
-    const firstname = "First"
-    const lastname = "Last"
-    const birthdate = "1997-01-01"
+    console.log(req.body);
+    const username = req.body.username;
+    const password = req.body.password;
+    const email = req.body.email;
+    const firstname = req.body.firstname;
+    const lastname = req.body.lastname;
+    const birthdate = new Date(req.body.birthdate);
+
+    //const username = "testuser2"
+    //const password = "Salasana123"
+    //const email = "test2@email.com"
+    //const firstname = "First"
+    //const lastname = "Last"
+    //const birthdate = "1997-01-01"
 
     //Validate user inputs
 
