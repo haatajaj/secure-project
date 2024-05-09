@@ -6,10 +6,12 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import bodyParser from "body-parser";
 import hpp from "hpp";
+import {randomBytes, createHash} from "node:crypto";
 
 import {PORT} from "./config.js";
 import connectDb from "./database/connectDb.js";
 import User from "./database/userModel.js";
+import { strict } from "assert";
 
 connectDb();
 
@@ -133,14 +135,32 @@ app.post("/login", async (req, res) => {
         }
         console.log("Match");
 
+        // Create fingerprint for adding context to the jwt
+        const randomStr = randomBytes(64).toString("hex");
+        console.log(randomStr)
+
+        const hash = createHash("SHA256").update(randomStr).digest("base64");
         
+        console.log(hash)
+
+        // Add fingerprint to a 'hardened' cookie in the response 
+        // (Will hash this and check against the hash in the jwt)
+        res.cookie('__Secure-fingerprint', randomStr, {
+            httpOnly:true, 
+            sameSite:"strict", 
+            secure:true, 
+            maxAge: new Date(Date.now() + 30000)});
+
+        console.log(res.cookie)
+
 
         // Create jwt token and send to client
         const jwt_token = jwt.sign({
-            username: user.username,
-            email: user.email}, 
+            username: user.username}, 
             "secret",
-            {expiresIn: "20s"});
+            {expiresIn: "20s",
+             subject: hash
+            });
 
 
         return res.status(200).send({
