@@ -5,6 +5,7 @@ import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import bodyParser from "body-parser";
+import hpp from "hpp";
 
 import {PORT} from "./config.js";
 import connectDb from "./database/connectDb.js";
@@ -20,9 +21,14 @@ const options = {
 const app = express()
 app.use(cors());
 app.use(bodyParser.json());
+app.use(hpp());
 
 app.get("/", (req, res) => {
   res.send("Home")
+});
+
+app.post("/authorize", async (req, res) => {
+
 });
 
 app.post("/register", async (req, res) => {
@@ -126,12 +132,22 @@ app.post("/login", async (req, res) => {
             })
         }
         console.log("Match");
-        return res.status(200).send({
-            message: "Password matches"
-        })
+
         
 
         // Create jwt token and send to client
+        const jwt_token = jwt.sign({
+            username: user.username,
+            email: user.email}, 
+            "secret",
+            {expiresIn: "20s"});
+
+
+        return res.status(200).send({
+            message: "Logged in",
+            username: user.username,
+            jwt_token
+        })
 
     } catch (err) {
         console.log(err);
