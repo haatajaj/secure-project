@@ -1,0 +1,6 @@
+.inputDiv > .errorLabel {
+    color: red;
+    font-size: 10px;
+    height: 12px;
+    display: block;
+}
