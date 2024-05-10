@@ -30,8 +30,9 @@ const Login = () => {
             setPasswordErr("Enter valid password")
         }
 
-        fetch("http://localhost:3002/login", {
+        fetch("https://localhost:3001/login", {
             method: "POST",
+            withCredentials: true,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -40,6 +41,7 @@ const Login = () => {
         .then((res) => res.json())
         .then((data) => {
             console.log(data);
+            console.log(document.cookie);
         })
         .catch((err) => {
             console.log(err);

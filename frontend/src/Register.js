@@ -92,7 +92,7 @@ const Register = () => {
             setBirthdateErr("Must be over 18")
         }
 
-        fetch("http://localhost:3002/register", {
+        fetch("https://localhost:3001/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

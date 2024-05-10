@@ -16,14 +16,20 @@ import { strict } from "assert";
 connectDb();
 
 const options = {
-    key: fs.readFileSync(".secret/selfsigned.key"),
-    cert: fs.readFileSync(".secret/selfsigned.crt")
+    key: fs.readFileSync("../.secret/localhost-key.pem"),
+    cert: fs.readFileSync("../.secret/localhost.pem")
 };
 
 const app = express()
-app.use(cors());
+app.use(cors({
+    origin: ["https://localhost:3000"],
+    credentials: true,
+    //sameSite: "none"
+}));
 app.use(bodyParser.json());
 app.use(hpp());
+
+const server = https.createServer(options, app)
 
 app.get("/", (req, res) => {
   res.send("Home")
@@ -113,7 +119,7 @@ app.post("/login", async (req, res) => {
     console.log(req.body);
     const username = req.body.username;
     const password = req.body.password;
-    
+    console.log("Cookie: " + req.header.cookie);
     try {
         const user = await User.findOne({username:username}).exec();
         if(user === null) {
@@ -159,7 +165,7 @@ app.post("/login", async (req, res) => {
             username: user.username}, 
             "secret",
             {expiresIn: "20s",
-             subject: hash
+             //subject: hash
             });
 
 
@@ -230,11 +236,10 @@ app.post("/login", async (req, res) => {
     //});*/
 });
 
-const server = https.createServer(options, app)
-server.listen(PORT, () => {
-    console.log("Connected: HTTPS on port " + PORT)
+server.listen(process.env.HTTPS_PORT, () => {
+    console.log("Connected: HTTPS on port " + process.env.HTTPS_PORT)
 });
 
-app.listen(3002, () => {
+/*app.listen(3002, () => {
     console.log("Connected: HTTP on port " + 3002)
-});
+});*/
