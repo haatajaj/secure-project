@@ -35,8 +35,34 @@ app.get("/", (req, res) => {
   res.send("Home")
 });
 
-app.post("/authorize", async (req, res) => {
+app.get("/auth", async (req, res) => {
+    try{
+        const jwt_token = req.headers.authorization.split(" ")[1];
+        const verifiedToken = await jwt.verify(jwt_token, "secret");
+        //console.log(verifiedToken);
+        const user = await User.findOne({username:verifiedToken.username}).exec();
+        //console.log(user);
+        const sanitizedUser = (() => {
+            return {
+                "username": user.username,
+                "firstname": user.firstname,
+                "lastname": user.lastname,
+                "email": user.email
+            }
+        })();
 
+        res.status(200).send({
+            message: "Authorization succesful",
+            sanitizedUser
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).send({
+            message: "Error during authorization",
+            err
+        });
+    }
 });
 
 app.post("/register", async (req, res) => {
