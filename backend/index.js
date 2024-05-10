@@ -105,10 +105,18 @@ app.post("/register", async (req, res) => {
         // Save user
         try {
             const result = await user.save();
+
+            const jwt_token = jwt.sign({
+                username: user.username}, 
+                "secret",
+                {expiresIn: "20s",
+                 //subject: hash
+                });
+
             //console.log(result);
             res.status(201).send({
                 message: "User registered",
-                result
+                jwt_token
             });
         } catch (err) {
             console.log(err);
@@ -127,8 +135,6 @@ app.post("/register", async (req, res) => {
             }
         });
         */
-        
-
 
     } catch (err) {
         console.log("Failure in hashing the password")

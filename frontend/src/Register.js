@@ -3,11 +3,14 @@ import DatePicker from "react-datepicker";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "./NavBar";
+import Cookies from "universal-cookie";
+
 import './Register.css';
 
 
 import "react-datepicker/dist/react-datepicker.css";
 
+const cookies = new Cookies(null, { path: '/' });
 
 const Register = () => {
     const [username, setUsername] = useState("")
@@ -26,7 +29,6 @@ const Register = () => {
     const [lastnameErr, setLastnameErr] = useState("")
     const [birthdateErr, setBirthdateErr] = useState("")
     
-    const [check, setCheck] = useState(0)
 
     const navigate = useNavigate();
 
@@ -126,6 +128,8 @@ const Register = () => {
             .then((res) => res.json())
             .then((data) => {
                 console.log(data);
+                cookies.set("JWT_TOKEN", data.jwt_token)
+
                 navigate("/");
             })
             .catch((err) => {
@@ -163,6 +167,7 @@ const Register = () => {
             <div className="inputDiv">
             <input
                 value={conPassword}
+                type="password"
                 placeholder="pasword"
                 onChange={(x) => setConPassword(x.target.value)}
             />

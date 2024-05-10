@@ -10,6 +10,7 @@ const Home = () => {
     const [email, setEmail] = useState("")
     const [firstname, setFirstname] = useState("")
     const [lastname, setLastname] = useState("")
+    const [errorMsg, setErrorMsg] = useState("")
     const navigate = useNavigate();
 
     const onClickLogout = async () => {
@@ -37,7 +38,7 @@ const Home = () => {
                 setLastname(data.sanitizedUser.lastname)
             })
             .catch((err) => {
-                console.log(err);
+                setErrorMsg("JWT Token expired")
             })
         }
     }, []);
@@ -46,9 +47,26 @@ const Home = () => {
         <div className="home">
             <NavBar />
             {cookies.get("JWT_TOKEN") ? (
-                <button onClick={onClickLogout} className="logout">
-                    Logout
-                </button>
+                <div>
+                    <table>
+                        <tr>
+                            <th>User Info</th>
+                        </tr>
+                        <tr>
+                            <th>{username}</th>
+                        </tr>
+                        <tr>
+                            <th>{email}</th>
+                        </tr>
+                        <tr>
+                            <th>{firstname} {lastname}</th>
+                        </tr>
+                    </table>
+
+                    <button onClick={onClickLogout} className="logout">
+                        Logout
+                    </button>
+                </div>
             ) : (
                 <h1>Home</h1>
             )}
