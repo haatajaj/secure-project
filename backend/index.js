@@ -8,7 +8,7 @@ import bodyParser from "body-parser";
 import hpp from "hpp";
 import {randomBytes, createHash} from "node:crypto";
 import { rateLimit } from "express-rate-limit"
-import {body, validationResult } from "express-validator"
+import {body, check, validationResult } from "express-validator"
 
 
 import connectDb from "./database/connectDb.js";
@@ -68,20 +68,32 @@ app.get("/", (req, res) => {
   res.send("Home")
 });
 
-app.get("/auth", async (req, res) => {
+app.get("/auth", [
+    check("jwt_token").notEmpty().isString().escape(),
+    check("__Secure-fingerprint").notEmpty().isString().escape(),
+], async (req, res) => {
     try{
+        const valRes = validationResult(req);
+        if(!valRes.isEmpty()) {
+            console.log(valRes);
+            throw new Error("Validation Error")
+        }
+
         let jwt_token = req.headers.authorization;
         if(!jwt_token) {
             throw new Error("No JWT")
         }
+        console.log(jwt_token);
         const randomStr = req.headers.cookie.split("=")[1];
         if(!randomStr) {
             throw new Error("No RandomString")
         }
+        console.log(randomStr);
         const verifiedToken = jwt.verify(jwt_token, process.env.JWT_TOKEN);
 
         const hash = createHash("SHA256").update(randomStr).digest("base64");
         if(verifiedToken.sub !== hash) {
+            console.log("Ei täsmää");
             throw new Error("Invalid Credentials")
         }
         
@@ -107,20 +119,28 @@ app.get("/auth", async (req, res) => {
     }
 });
 
-app.post("/register", body().isJSON().escape(), async (req, res) => {
-    // Passing values from JSON to explicit values that get stored
-    const username = req.body.username;
-    const password = req.body.password;
-    const email = req.body.email;
-    const firstname = req.body.firstname;
-    const lastname = req.body.lastname;
-    const birthdate = new Date(req.body.birthdate);
-
+app.post("/register", [
+    body("username").notEmpty().isString().escape(), 
+    body("password").notEmpty().isString().escape(),
+    body("email").notEmpty().isString().escape(),
+    body("firstname").notEmpty().isString().escape(),
+    body("lastname").notEmpty().isString().escape(),
+    body("birthdate").notEmpty().isString().isDate().escape(),], async (req, res) => {
     try{
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
+            console.log(valRes);
             throw new Error("Validation Error")
         }
+
+        // Passing values from JSON to explicit values that get stored
+        const username = req.body.username;
+        const password = req.body.password;
+        const email = req.body.email;
+        const firstname = req.body.firstname;
+        const lastname = req.body.lastname;
+        const birthdate = new Date(req.body.birthdate);
+        
         // Using argon2id hashing function per OWASP recommendation
         const hash = await argon2.hash(password, {
             // Default values, over the OWASP minimun config
@@ -172,28 +192,30 @@ app.post("/register", body().isJSON().escape(), async (req, res) => {
                     duplicate: val,
                 });
             }
-            return res.status(400).send({
+            return res.status(401).send({
                 message: "Error during registration"
             });
         }
     } catch (err) {
-        res.status(400).send({
+        res.status(401).send({
             message: "User not registered"
         });
     }
 
 });
 
-app.post("/login", body().isJSON().escape(), async (req, res) => {
-    // Passing values from JSON to explicit values that get stored
-    const username = req.body.username;
-    const password = req.body.password;
-
+app.post("/login", [
+    body("username").notEmpty().isString().escape(), 
+    body("password").notEmpty().isString().escape()], async (req, res) => {
     try {
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
+            console.log(valRes);
             throw new Error("Validation Error")
         }
+        // Passing values from JSON to explicit values that get stored
+        const username = req.body.username;
+        const password = req.body.password;
 
         const user = await User.findOne({username:username}).exec();
         if(user === null) {
@@ -224,6 +246,7 @@ app.post("/login", body().isJSON().escape(), async (req, res) => {
             jwt_token
         });
     } catch (err) {
+        console.log(err.message)
         return res.status(401).send({
             message: "Invalid credentials"
         })
