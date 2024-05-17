@@ -13,35 +13,34 @@ const Login = () => {
 
     const [usernameErr, setUsernameErr] = useState("")
     const [passwordErr, setPasswordErr] = useState("")
+    const [requestdErr, setrequestdErr] = useState("")
 
     const navigate = useNavigate();
 
     const onButtonClick = () => {
         setUsernameErr("")
         setPasswordErr("")
+        setrequestdErr("")
         let check = 0;
 
         if(username === "") {
-            setUsernameErr("Enter your username, 4-12 letters")
+            setUsernameErr("Enter username")
             check = 1;
         }
-        else if(!/^[0-9A-Za-z]{4,12}$/.test(username)) {
+        /*else if(!/^[0-9A-Za-z]{4,12}$/.test(username)) {
             setUsernameErr("Enter valid username, 4-12 letters")
             check = 1;
-        }
+        }*/
         if(password === "") {
-            setPasswordErr("Enter password, must contain 10-40 letters, capitalized, uncapitalized and a number")
+            setPasswordErr("Enter password")
             check = 1;
         }
-        else if(!/^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z]).{10,40}$/.test(password)) {
+        /*else if(!/^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z]).{10,40}$/.test(password)) {
             setPasswordErr("Invalid, must contain 10-40 letters, capitalized, uncapitalized and a number")
             check = 1;
-        }
+        }*/
 
-        if(check === 1) {
-            console.log("Invalid form")
-        } else {
-
+        if(check === 0) {
             fetch("https://localhost:3001/login", {
                 method: "POST",
                 withCredentials: true,
@@ -50,7 +49,15 @@ const Login = () => {
                 },
                 body: JSON.stringify({username, password})
             })
-            .then((res) => res.json())
+            .then((res) => {
+                if(res.status === 200) {    
+                    return res.json(); 
+                } else if(res.status === 401) {
+                    throw new Error("Invalid username or password");
+                } else {
+                    throw new Error("Authorization rejected") // Default error
+                }        
+            })
             .then((data) => {
                 cookies.set("JWT_TOKEN", data.jwt_token)
                 //console.log(data.jwt_token);
@@ -59,7 +66,8 @@ const Login = () => {
                 navigate("/");
             })
             .catch((err) => {
-                console.log(err);
+                console.log(err)
+                setrequestdErr("Failure");
             })
         }
     }
@@ -91,6 +99,7 @@ const Login = () => {
             </div>
             <div className="inputDiv">
                 <input className="inputButton" type="button" onClick={onButtonClick} value={"Login"} />
+                <label className="errorLabel">{requestdErr}</label>
             </div>
         </div>
     );

@@ -122,10 +122,7 @@ const Register = () => {
             setBirthdateErr("Must be over 18")
         }
 
-        if (check === 1) {
-            console.log("Invalid form")
-        } else {
-
+        if (check === 0) {
             fetch("https://localhost:3001/register", {
                 method: "POST",
                 headers: {
@@ -133,11 +130,18 @@ const Register = () => {
                 },
                 body: JSON.stringify({ username, password, email, firstname, lastname, birthdate })
             })
-                .then((res) => res.json())
+                .then((res) => {
+                    if(res.status === 201) {
+                        return res.json();
+                    } else if(res.status === 400) {
+                        throw new Error("")
+                    } else {
+                        throw new Error("") //Default
+                    }
+                    
+                    })
                 .then((data) => {
-                    console.log(data);
                     cookies.set("JWT_TOKEN", data.jwt_token)
-
                     navigate("/");
                 })
                 .catch((err) => {
