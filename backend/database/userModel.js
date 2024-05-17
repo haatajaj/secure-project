@@ -5,15 +5,15 @@ const UserSchema = new mongoose.Schema({
         type: String, 
         required: [true, "Provide an username"], 
         unique: [true, "Username already in use"],
-        minLength: [6, "Length is less than 6"], 
-        maxLength: [12, "Length is more than 12"]
+        minLength: [6, "Username must be atleaset 6 letters"], 
+        maxLength: [12, "Username must be at most 12 letters"]
     },
     password: {        
         type: String, 
         required: [true, "Provide a password"],
-        unique: false
-        //minLength: [8, "Length is less than 8"], 
-        //maxLength: [32, "Length is more than 32"]
+        unique: false,
+        minLength: [10, "Password must be at leaset 10 letters"], 
+        maxLength: [36, "Password must be at most 36 letters"]
     },
     email: {
         type: String, 

@@ -7,7 +7,8 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import hpp from "hpp";
 import {randomBytes, createHash} from "node:crypto";
-import { rateLimit } from 'express-rate-limit'
+import { rateLimit } from "express-rate-limit"
+import {body, validationResult } from "express-validator"
 
 
 import connectDb from "./database/connectDb.js";
@@ -50,12 +51,11 @@ function createJWT(username) {
         // Create fingerprint for adding context to the jwt
         const randomStr = randomBytes(64).toString("hex");
         const hash = createHash("SHA256").update(randomStr).digest("base64");
-        
-
+    
         // Create jwt token and send to client
         const jwt_token = jwt.sign({
             username: username}, 
-            "secret",
+            process.env.JWT_SECRET,
             {expiresIn: "30s",
              subject: hash
             }
@@ -71,20 +71,22 @@ app.get("/", (req, res) => {
 app.get("/auth", async (req, res) => {
     try{
         let jwt_token = req.headers.authorization;
-        console.log(jwt_token);
+        if(!jwt_token) {
+            throw new Error("No JWT")
+        }
         const randomStr = req.headers.cookie.split("=")[1];
-        console.log("RAND: " + randomStr);
-        const verifiedToken = await jwt.verify(jwt_token, "secret");
-        console.log(verifiedToken);
+        if(!randomStr) {
+            throw new Error("No RandomString")
+        }
+        const verifiedToken = jwt.verify(jwt_token, process.env.JWT_TOKEN);
 
         const hash = createHash("SHA256").update(randomStr).digest("base64");
         if(verifiedToken.sub !== hash) {
-            throw new Error("Context doesn't match")
+            throw new Error("Invalid Credentials")
         }
         
-        //console.log(verifiedToken);
         const user = await User.findOne({username:verifiedToken.username}).exec();
-        //console.log(user);
+
         const sanitizedUser = (() => {
             return {
                 "username": user.username,
@@ -95,22 +97,18 @@ app.get("/auth", async (req, res) => {
         })();
 
         res.status(200).send({
-            message: "Authorization succesful",
+            message: "Authorization successful",
             sanitizedUser
         });
-
     } catch (err) {
-        console.log(err);
         res.status(401).send({
-            message: err.message
+            message: "Invalid credentials"
         });
     }
 });
 
-app.post("/register", async (req, res) => {
-    console.log(req.body);
-    const size = Buffer.byteLength(JSON.stringify(req.body))
-    console.log(size)
+app.post("/register", body().isJSON().escape(), async (req, res) => {
+    // Passing values from JSON to explicit values that get stored
     const username = req.body.username;
     const password = req.body.password;
     const email = req.body.email;
@@ -118,53 +116,67 @@ app.post("/register", async (req, res) => {
     const lastname = req.body.lastname;
     const birthdate = new Date(req.body.birthdate);
 
-    //Validate user inputs
-
     try{
+        const valRes = validationResult(req);
+        if(!valRes.isEmpty()) {
+            throw new Error("Validation Error")
+        }
+        // Using argon2id hashing function per OWASP recommendation
         const hash = await argon2.hash(password, {
-            // Defaults, over the OWASP minimun config
+            // Default values, over the OWASP minimun config
             type: argon2.argon2id,
             memoryCost: 65536,
             parallelism: 4,
-            timeCost: 3
-            // secret: 
+            timeCost: 3,
+            secret: Buffer.from(process.env.PEPPER),
         });
-        console.log(hash)
-        const user = new User({
-            username: username,
-            password: hash,
-            email: email,
-            firstname: firstname,
-            lastname: lastname,
-            birthdate: birthdate
-        });
-        
-        // Save user
+
         try {
+            const user = new User({
+                username: username,
+                password: hash,
+                email: email,
+                firstname: firstname,
+                lastname: lastname,
+                birthdate: birthdate
+            });
+            // Save user
             const result = await user.save();
 
-            const jwt_token = jwt.sign({
-                username: user.username}, 
-                "secret",
-                {expiresIn: "30s",
-                 //subject: hash
-                });
+            const [jwt_token, randomStr] = createJWT(user.username);
 
-            //console.log(result);
-            res.status(201).send({
-                message: "User registered",
+            // Add fingerprint to a 'hardened' cookie in the response 
+            // (Will hash this and check against the hash in the jwt)
+            res.cookie('__Secure-fingerprint', randomStr, {
+                httpOnly:true, 
+                sameSite:"strict", 
+                secure:true, 
+                maxAge: new Date(Date.now() + 30000)});
+    
+            return res.status(201).send({
+                message: "Registration succesful",
                 jwt_token
             });
         } catch (err) {
-            console.log(err);
-            res.status(400).send({
-                message: "User not registered"
+            if(err.name == "MongoServerError") {
+                if(err.code === 11000) {
+                    const val = Object.keys(err.keyValue)[0]
+                    return res.status(400).send({
+                        message: "Already in use",
+                        duplicate: val,
+                    });
+            }} else if(err.name == "ValidationError") {
+                const val = err.message.split(":").at(-1);
+                return res.status(400).send({
+                    message: "Error during validation",
+                    duplicate: val,
+                });
+            }
+            return res.status(400).send({
+                message: "Error during registration"
             });
         }
-
     } catch (err) {
-        console.log("Failure in hashing the password")
-        console.log(err);
         res.status(400).send({
             message: "User not registered"
         });
@@ -172,21 +184,28 @@ app.post("/register", async (req, res) => {
 
 });
 
-app.post("/login", async (req, res) => {
+app.post("/login", body().isJSON().escape(), async (req, res) => {
+    // Passing values from JSON to explicit values that get stored
     const username = req.body.username;
     const password = req.body.password;
-    //console.log("Cookie: " + req.header.cookie);
+
     try {
+        const valRes = validationResult(req);
+        if(!valRes.isEmpty()) {
+            throw new Error("Validation Error")
+        }
+
         const user = await User.findOne({username:username}).exec();
         if(user === null) {
             console.log("Not found");
             return res.status(401).send({
-                message: "User not found or credentials invalid"
+                message: "Invalid credentials"
             })
         }
-        if(!await argon2.verify(user.password, password)) {
+        if(!await argon2.verify(user.password, password, {secret: Buffer.from(process.env.PEPPER)})) {
+            console.log("Invalid");
             return res.status(401).send({
-                message: "User not found or credentials invalid"
+                message: "Invalid credentials"
             })
         }
 
@@ -194,7 +213,6 @@ app.post("/login", async (req, res) => {
 
         // Add fingerprint to a 'hardened' cookie in the response 
         // (Will hash this and check against the hash in the jwt)
-
         res.cookie('__Secure-fingerprint', randomStr, {
             httpOnly:true, 
             sameSite:"strict", 
@@ -203,13 +221,11 @@ app.post("/login", async (req, res) => {
 
         return res.status(200).send({
             message: "Authentication succesful",
-            jwt_token,
-            randomStr,
+            jwt_token
         });
-
     } catch (err) {
-        return res.status(400).send({
-            message: "Error occurred"
+        return res.status(401).send({
+            message: "Invalid credentials"
         })
     };
 });
