@@ -12,8 +12,8 @@ const UserSchema = new mongoose.Schema({
         type: String, 
         required: [true, "Provide a password"],
         unique: false,
-        minLength: [10, "Password must be at leaset 10 letters"], 
-        maxLength: [36, "Password must be at most 36 letters"]
+        //minLength: [10, "Password must be at least 10 letters"], 
+        //maxLength: [36, "Password must be at most 36 letters"]
     },
     email: {
         type: String, 
