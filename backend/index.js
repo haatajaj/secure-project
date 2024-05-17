@@ -8,7 +8,6 @@ import bodyParser from "body-parser";
 import hpp from "hpp";
 import {randomBytes, createHash} from "node:crypto";
 
-import {PORT} from "./config.js";
 import connectDb from "./database/connectDb.js";
 import User from "./database/userModel.js";
 import { strict } from "assert";
@@ -23,10 +22,11 @@ const options = {
 const app = express()
 app.use(cors({
     origin: ["https://localhost:3000"],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     //sameSite: "none"
 }));
-app.use(bodyParser.json());
+app.use(express.json({limit: "500b"}));
 app.use(hpp());
 
 const server = https.createServer(options, app)
@@ -58,28 +58,22 @@ app.get("/auth", async (req, res) => {
 
     } catch (err) {
         console.log(err);
-        res.status(500).send({
-            message: "Error during authorization",
-            err
+        res.status(401).send({
+            message: "Authorization unsuccesful"
         });
     }
 });
 
 app.post("/register", async (req, res) => {
     console.log(req.body);
+    const size = Buffer.byteLength(JSON.stringify(req.body))
+    console.log(size)
     const username = req.body.username;
     const password = req.body.password;
     const email = req.body.email;
     const firstname = req.body.firstname;
     const lastname = req.body.lastname;
     const birthdate = new Date(req.body.birthdate);
-
-    //const username = "testuser2"
-    //const password = "Salasana123"
-    //const email = "test2@email.com"
-    //const firstname = "First"
-    //const lastname = "Last"
-    //const birthdate = "1997-01-01"
 
     //Validate user inputs
 
@@ -120,67 +114,43 @@ app.post("/register", async (req, res) => {
             });
         } catch (err) {
             console.log(err);
-            res.status(500).send({
-                message: "Error during registration",
-                err
+            res.status(400).send({
+                message: "User not registered"
             });
         }
-
-        /*
-        await user.save(function(res, err){
-            if(err) {
-                console.log(err);
-            } else {
-                console.log(res);
-            }
-        });
-        */
 
     } catch (err) {
         console.log("Failure in hashing the password")
         console.log(err);
-        res.status(500).send({
-            message: "Error during hashing",
-            err
+        res.status(400).send({
+            message: "User not registered"
         });
     }
 
 });
 
 app.post("/login", async (req, res) => {
-    console.log(req.body);
     const username = req.body.username;
     const password = req.body.password;
-    console.log("Cookie: " + req.header.cookie);
+    //console.log("Cookie: " + req.header.cookie);
     try {
         const user = await User.findOne({username:username}).exec();
         if(user === null) {
             console.log("Not found");
-            return res.status(404).send({
-                message: "Username not found"
+            return res.status(401).send({
+                message: "User not found or credentials invalid"
             })
         }
-        /*
-        return res.status(200).send({
-            message: "Username found"
-        })
-        */
         if(!await argon2.verify(user.password, password)) {
-            console.log("No Match");
-            return res.status(400).send({
-                message: "Password not correct"
+            return res.status(401).send({
+                message: "User not found or credentials invalid"
             })
         }
-        console.log("Match");
 
         // Create fingerprint for adding context to the jwt
         const randomStr = randomBytes(64).toString("hex");
-        console.log(randomStr)
-
         const hash = createHash("SHA256").update(randomStr).digest("base64");
         
-        console.log(hash)
-
         // Add fingerprint to a 'hardened' cookie in the response 
         // (Will hash this and check against the hash in the jwt)
         res.cookie('__Secure-fingerprint', randomStr, {
@@ -188,9 +158,6 @@ app.post("/login", async (req, res) => {
             sameSite:"strict", 
             secure:true, 
             maxAge: new Date(Date.now() + 30000)});
-
-        console.log(res.cookie)
-
 
         // Create jwt token and send to client
         const jwt_token = jwt.sign({
@@ -200,7 +167,6 @@ app.post("/login", async (req, res) => {
              //subject: hash
             });
 
-
         return res.status(200).send({
             message: "Logged in",
             username: user.username,
@@ -208,70 +174,12 @@ app.post("/login", async (req, res) => {
         })
 
     } catch (err) {
-        console.log(err);
         return res.status(400).send({
-            message: "Error",
-            err
+            message: "Error occurred"
         })
     };
-
-
-
-/*
-    User.findOne({username:username}) 
-    .then((user) => {
-        argon2.verify(user.password, password, {
-            // Defaults, over the OWASP minimun config
-            type: argon2.argon2id,
-            memoryCost: 65536,
-            parallelism: 4,
-            timeCost: 3
-            // secret: 
-        })
-        .then((argon2Match) => {
-            if(!argon2Match) {
-                console.log("Password doesn't match");
-                res.status(400).send({
-                    message: "Password doesn't match",
-                    argon2Match
-                });
-            } 
-
-
-
-
-
-
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(400).send({
-                message: "Error during password matching",
-                err
-            });
-        });
-    })
-    .catch((err) => {
-        res.status(404).send({
-            message: "Username not found",
-            err
-        });
-
-    })
-
-
-    //const result = await User.find({});
-    //console.log(result);
-    //res.status(201).send({
-    //    message: "Login",
-    //    result
-    //});*/
 });
 
 server.listen(process.env.HTTPS_PORT, () => {
     console.log("Connected: HTTPS on port " + process.env.HTTPS_PORT)
 });
-
-/*app.listen(3002, () => {
-    console.log("Connected: HTTP on port " + 3002)
-});*/
