@@ -31,7 +31,7 @@ const Register = () => {
     const [lastnameErr, setLastnameErr] = useState("")
     const [birthdateErr, setBirthdateErr] = useState("")
 
-    const [openPopup, setOpenPopup] = useState(false);
+    const [requestdErr, setrequestdErr] = useState("")
 
     const contentStyle = { 'background': 'lightgray', 'font-size': '12px', 'max-width': '150px' };
     const arrowStyle = { color: 'lightgray' };
@@ -134,9 +134,9 @@ const Register = () => {
                     if(res.status === 201) {
                         return res.json();
                     } else if(res.status === 400) {
-                        throw new Error("")
+                        throw new Error("Invalid values ,try again")
                     } else {
-                        throw new Error("") //Default
+                        throw new Error("Error occurred during registration") //Default
                     }
                     
                     })
@@ -146,6 +146,7 @@ const Register = () => {
                 })
                 .catch((err) => {
                     console.log(err);
+                    setrequestdErr(err.message);
                 })
         }
 
@@ -255,7 +256,8 @@ const Register = () => {
                     <label className="errorLabel">{birthdateErr}</label>
                 </div>
                 <div className="inputDiv">
-                    <input className="inputButton" type="button" onClick={onButtonClick} value={"Login"} />
+                    <input className="inputButton" type="button" onClick={onButtonClick} value={"Register"} />
+                    <label className="errorLabel">{requestdErr}</label>
                 </div>
             </div>
         </div>

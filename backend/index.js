@@ -7,12 +7,14 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import hpp from "hpp";
 import {randomBytes, createHash} from "node:crypto";
+import { rateLimit } from 'express-rate-limit'
+
 
 import connectDb from "./database/connectDb.js";
 import User from "./database/userModel.js";
 import { strict } from "assert";
 
-connectDb();
+
 
 const options = {
     key: fs.readFileSync("../.secret/localhost-key.pem"),
@@ -26,8 +28,18 @@ app.use(cors({
     credentials: true,
     //sameSite: "none"
 }));
+
+app.use(rateLimit({
+    windowMs: 15*60*1000, // 15 mins
+    limit: 3,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+}));
+
 app.use(express.json({limit: "500b"}));
 app.use(hpp());
+
+connectDb();
 
 const server = https.createServer(options, app)
 

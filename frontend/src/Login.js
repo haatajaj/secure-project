@@ -54,7 +54,9 @@ const Login = () => {
                     return res.json(); 
                 } else if(res.status === 401) {
                     throw new Error("Invalid username or password");
-                } else {
+                } else if(res.status === 429) {
+                    throw new Error("Rate limit reached. Try again in 15 min")
+                }else {
                     throw new Error("Authorization rejected") // Default error
                 }        
             })
@@ -67,7 +69,7 @@ const Login = () => {
             })
             .catch((err) => {
                 console.log(err)
-                setrequestdErr("Failure");
+                setrequestdErr(err.message);
             })
         }
     }
