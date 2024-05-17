@@ -13,6 +13,8 @@ import { rateLimit } from 'express-rate-limit'
 import connectDb from "./database/connectDb.js";
 import User from "./database/userModel.js";
 import { strict } from "assert";
+import { log } from "console";
+import { subscribe } from "diagnostics_channel";
 
 
 
@@ -25,13 +27,13 @@ const app = express()
 app.use(cors({
     origin: ["https://localhost:3000"],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ["GET", "POST"],
     credentials: true,
-    //sameSite: "none"
 }));
 
 app.use(rateLimit({
     windowMs: 15*60*1000, // 15 mins
-    limit: 3,
+    limit: 20,
     standardHeaders: "draft-7",
     legacyHeaders: false,
 }));
@@ -43,14 +45,43 @@ connectDb();
 
 const server = https.createServer(options, app)
 
+
+function createJWT(username) {
+        // Create fingerprint for adding context to the jwt
+        const randomStr = randomBytes(64).toString("hex");
+        const hash = createHash("SHA256").update(randomStr).digest("base64");
+        
+
+        // Create jwt token and send to client
+        const jwt_token = jwt.sign({
+            username: username}, 
+            "secret",
+            {expiresIn: "30s",
+             subject: hash
+            }
+        );
+        return [jwt_token, randomStr]
+};  
+
+
 app.get("/", (req, res) => {
   res.send("Home")
 });
 
 app.get("/auth", async (req, res) => {
     try{
-        const jwt_token = req.headers.authorization.split(" ")[1];
+        let jwt_token = req.headers.authorization;
+        console.log(jwt_token);
+        const randomStr = req.headers.cookie.split("=")[1];
+        console.log("RAND: " + randomStr);
         const verifiedToken = await jwt.verify(jwt_token, "secret");
+        console.log(verifiedToken);
+
+        const hash = createHash("SHA256").update(randomStr).digest("base64");
+        if(verifiedToken.sub !== hash) {
+            throw new Error("Context doesn't match")
+        }
+        
         //console.log(verifiedToken);
         const user = await User.findOne({username:verifiedToken.username}).exec();
         //console.log(user);
@@ -71,7 +102,7 @@ app.get("/auth", async (req, res) => {
     } catch (err) {
         console.log(err);
         res.status(401).send({
-            message: "Authorization unsuccesful"
+            message: err.message
         });
     }
 });
@@ -115,7 +146,7 @@ app.post("/register", async (req, res) => {
             const jwt_token = jwt.sign({
                 username: user.username}, 
                 "secret",
-                {expiresIn: "20s",
+                {expiresIn: "30s",
                  //subject: hash
                 });
 
@@ -159,31 +190,22 @@ app.post("/login", async (req, res) => {
             })
         }
 
-        // Create fingerprint for adding context to the jwt
-        const randomStr = randomBytes(64).toString("hex");
-        const hash = createHash("SHA256").update(randomStr).digest("base64");
-        
+        const [jwt_token, randomStr] = createJWT(user.username);
+
         // Add fingerprint to a 'hardened' cookie in the response 
         // (Will hash this and check against the hash in the jwt)
+
         res.cookie('__Secure-fingerprint', randomStr, {
             httpOnly:true, 
             sameSite:"strict", 
             secure:true, 
             maxAge: new Date(Date.now() + 30000)});
 
-        // Create jwt token and send to client
-        const jwt_token = jwt.sign({
-            username: user.username}, 
-            "secret",
-            {expiresIn: "20s",
-             //subject: hash
-            });
-
         return res.status(200).send({
-            message: "Logged in",
-            username: user.username,
-            jwt_token
-        })
+            message: "Authentication succesful",
+            jwt_token,
+            randomStr,
+        });
 
     } catch (err) {
         return res.status(400).send({

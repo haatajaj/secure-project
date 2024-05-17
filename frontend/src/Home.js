@@ -2,8 +2,7 @@ import React, {useEffect, useState} from "react";
 import NavBar from "./NavBar";
 import { useNavigate } from "react-router-dom";
 import Cookies from "universal-cookie";
-
-const cookies = new Cookies(null, { path: '/' });
+import './Register.css';
 
 const Home = () => {
     const [username, setUsername] = useState("")
@@ -14,22 +13,30 @@ const Home = () => {
     const navigate = useNavigate();
 
     const onClickLogout = async () => {
-        cookies.remove("JWT_TOKEN");
+        sessionStorage.removeItem("JWT_token");
         navigate("/");
     }
 
     useEffect(() => {
-        if(!cookies.get("JWT_TOKEN")) {
-            console.log("Not logged in");
+        console.log(sessionStorage.getItem("JWT_token"));
+        if(!sessionStorage.getItem("JWT_token")) {
+            setErrorMsg("not logged in");
         } else {
             fetch("https://localhost:3001/auth", {
                 method: "GET",
-                withCredentials: true,
+                credentials: "include",
                 headers: {
-                    Authorization: `Bearer ${cookies.get("JWT_TOKEN")}`
+                    Authorization: `${sessionStorage.getItem("JWT_token")}`
                 }
             })
-            .then((res) => res.json())
+            .then((res) => {
+                if(res.status === 200) {
+                    return res.json();
+                } else if (res.status === 401) {
+                    console.log("BODY: " + res.body.message);
+                    throw new Error(res.body.message)
+                }
+                })
             .then((data) => {
                 //console.log(data);
                 setUsername(data.sanitizedUser.username);
@@ -38,7 +45,9 @@ const Home = () => {
                 setLastname(data.sanitizedUser.lastname)
             })
             .catch((err) => {
-                setErrorMsg("JWT Token expired")
+                sessionStorage.removeItem("JWT_token");
+                console.log("ERROR: " + err.message);
+                setErrorMsg(err.message)
             })
         }
     }, []);
@@ -46,7 +55,7 @@ const Home = () => {
     return (
         <div className="home">
             <NavBar />
-            {cookies.get("JWT_TOKEN") ? (
+            {sessionStorage.getItem("JWT_token") ? (
                 <div>
                     <table>
                         <tr>
@@ -70,7 +79,7 @@ const Home = () => {
             ) : (
                 <h1>Home</h1>
             )}
-            
+            <label className="errorLabel">{errorMsg}</label>
         </div>
     );
 }

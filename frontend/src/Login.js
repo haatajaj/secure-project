@@ -43,7 +43,7 @@ const Login = () => {
         if(check === 0) {
             fetch("https://localhost:3001/login", {
                 method: "POST",
-                withCredentials: true,
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -61,10 +61,7 @@ const Login = () => {
                 }        
             })
             .then((data) => {
-                cookies.set("JWT_TOKEN", data.jwt_token)
-                //console.log(data.jwt_token);
-                console.log("Documents: " + document.cookie);
-                //console.log("Universal: " + cookies.get("TOKEN"));
+                sessionStorage.setItem("JWT_token", data.jwt_token)
                 navigate("/");
             })
             .catch((err) => {
