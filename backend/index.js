@@ -66,7 +66,7 @@ app.get("/auth", [
         let jwt_token = req.headers.authorization;
         const randomStr = req.headers.cookie.split("=")[1];
 
-        // JWT-token is verified, will thow JsonWebTokenError if not valid anymore
+        // JWT-token is verified, will throw JsonWebTokenError if not valid anymore
         const verifiedToken = jwt.verify(jwt_token, process.env.JWT_SECRET);
 
         // Fingerprint is hashed and checked against the hash in the JWT-token
@@ -108,7 +108,7 @@ app.get("/auth", [
 // Express validator is used to verify that the body contains the values and they are then sanitized
 app.post("/register", [
     body("username").notEmpty().isString().escape(), 
-    body("password").notEmpty().isString().escape(),
+    body("password").notEmpty().isString(),
     body("email").notEmpty().isString().escape(),
     body("firstname").notEmpty().isString().escape(),
     body("lastname").notEmpty().isString().escape(),
