@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
         maxLength: [12, "Username must be at most 12 letters"],
         validate: {
             validator: function(val) {
-                return /^[0-9A-Za-z]$/.test(val);
+                return !/^[0-9A-Za-z]$/.test(val);
             },
             message: "Invalid username"
         }
