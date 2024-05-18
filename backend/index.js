@@ -18,7 +18,8 @@ const options = {
     cert: fs.readFileSync("../.secret/localhost.pem")
 };
 
-const app = express()
+const app = express();
+
 app.use(cors({
     origin: ["https://localhost:3000"],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -39,28 +40,6 @@ app.use(hpp());
 connectDb();
 
 const server = https.createServer(options, app)
-
-/*
-function createJWT(username) {
-        // Create fingerprint for adding context to the jwt
-        const randomStr = randomBytes(64).toString("hex");
-        const hash = createHash("SHA256").update(randomStr).digest("base64");
-    
-        // Create jwt token and send to client
-        const jwt_token = jwt.sign({
-            username: username}, 
-            process.env.JWT_SECRET,
-            {expiresIn: "30s",
-             subject: hash
-            }
-        );
-        return [jwt_token, randomStr]
-};  */
-
-
-app.get("/", (req, res) => {
-  res.send("Home")
-});
 
 app.get("/auth", [
     check("jwt_token").notEmpty().isString().escape(),
@@ -198,6 +177,7 @@ app.post("/register", [
 
 });
 
+// 
 app.post("/login", [
     body("username").notEmpty().isString().escape(), 
     body("password").notEmpty().isString().escape()], async (req, res) => {
@@ -205,7 +185,7 @@ app.post("/login", [
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
             console.log(valRes);
-            throw new Error("Validation Error")
+            throw new Error("Invalid credentials")
         }
         // Passing values from JSON to explicit values that get stored
         const username = req.body.username;
@@ -213,16 +193,10 @@ app.post("/login", [
 
         const user = await User.findOne({username:username}).exec();
         if(user === null) {
-            console.log("Not found");
-            return res.status(401).send({
-                message: "Invalid credentials"
-            })
+            throw new Error("Invalid credentials")
         }
         if(!await argon2.verify(user.password, password, {secret: Buffer.from(process.env.PEPPER)})) {
-            console.log("Invalid");
-            return res.status(401).send({
-                message: "Invalid credentials"
-            })
+            throw new Error("Invalid credentials")
         }
 
         const [jwt_token, randomStr] = createJWT(user.username);
@@ -236,14 +210,19 @@ app.post("/login", [
             maxAge: new Date(Date.now() + 30000)});
 
         return res.status(200).send({
-            message: "Authentication succesful",
+            message: "Authentication successful",
             jwt_token
         });
     } catch (err) {
-        console.log(err.message)
-        return res.status(401).send({
-            message: "Invalid credentials"
-        })
+        if(err.message === "Invalid credentials") {
+            return res.status(400).send({
+                message: "Invalid credentials"
+            });
+        } else {
+            return res.status(400).send({
+                message: "Authentication not successful"
+            });
+        }
     };
 });
 

@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import {randomBytes, createHash} from "node:crypto";
 
-
 function createJWT(username) {
     // Create fingerprint for adding context to the jwt
     const randomStr = randomBytes(64).toString("hex");
