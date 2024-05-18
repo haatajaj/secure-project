@@ -27,18 +27,11 @@ const Login = () => {
             setUsernameErr("Enter username")
             check = 1;
         }
-        /*else if(!/^[0-9A-Za-z]{4,12}$/.test(username)) {
-            setUsernameErr("Enter valid username, 4-12 letters")
-            check = 1;
-        }*/
+
         if(password === "") {
             setPasswordErr("Enter password")
             check = 1;
         }
-        /*else if(!/^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z]).{10,40}$/.test(password)) {
-            setPasswordErr("Invalid, must contain 10-40 letters, capitalized, uncapitalized and a number")
-            check = 1;
-        }*/
 
         if(check === 0) {
             fetch("https://localhost:3001/login", {
@@ -65,7 +58,6 @@ const Login = () => {
                 navigate("/");
             })
             .catch((err) => {
-                console.log(err)
                 setrequestdErr(err.message);
             })
         }

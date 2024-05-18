@@ -8,11 +8,7 @@ import Cookies from "universal-cookie";
 import Popup from 'reactjs-popup';
 
 import './Register.css';
-
-
 import "react-datepicker/dist/react-datepicker.css";
-
-const cookies = new Cookies(null, { path: '/' });
 
 const Register = () => {
     const [username, setUsername] = useState("")
@@ -52,7 +48,6 @@ const Register = () => {
         setBirthdateErr("")
 
         let check = 0;
-        // Lisää validaatiota tänne, jotta vastaa modelia
 
         if (username === "") {
             setUsernameErr("Enter username")
@@ -67,7 +62,7 @@ const Register = () => {
             setPasswordErr("Enter password")
             check = 1;
         }
-        else if (!/^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z]).{10,36}$/.test(password)) {
+        else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*"'()+,-./:;<=>?[\]^_`{|}~])(?=.{10,})/.test(password)) {
             setPasswordErr("Invalid")
             check = 1;
         }
@@ -76,7 +71,7 @@ const Register = () => {
             setConPasswordErr("Enter password")
             check = 1;
         }
-        else if (!/^(?=.*?[0-9])(?=.*?[A-Z])(?=.*?[a-z]).{10,36}$/.test(conPassword)) {
+        else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*"'()+,-./:;<=>?[\]^_`{|}~])(?=.{10,})/.test(conPassword)) {
             setConPasswordErr("Invalid")
             check = 1;
         }
@@ -125,6 +120,7 @@ const Register = () => {
         if (check === 0) {
             fetch("https://localhost:3001/register", {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -135,15 +131,17 @@ const Register = () => {
                         return res.json();
                     } else if(res.status === 400) {
                         return res.json();
+                    } else if(res.status === 429) {
+                        throw new Error("Rate limit reached. Try again in 15 min")
                     } else {
                         throw new Error("Error occurred during registration") //Default
                     }
                     
                     })
                 .then((data) => {
-                    if(data.duplicate === "username") {
+                    if(data.val === "username") {
                         setrequestdErr("Username already in use")
-                    } else if(data.duplicate === "email") {
+                    } else if(data.val === "email") {
                         setrequestdErr("Email already in use")
                     } else {
                         sessionStorage.setItem("JWT_token", data.jwt_token)
@@ -152,7 +150,6 @@ const Register = () => {
 
                 })
                 .catch((err) => {
-                    console.log(err);
                     setrequestdErr(err.message);
                 })
         }

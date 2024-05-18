@@ -9,8 +9,6 @@ const PasswordStrength = (prop) => {
     let widths = ["1%", "33%", "66%", "100%"]; 
     let colors = ["#FF0000", "#FF4500", "#FFFF00", "#008000"]; 
 
-
-    console.log(strength)
     return (
         <div className="strengthContainer"> 
             <div className="strengthBar" style={

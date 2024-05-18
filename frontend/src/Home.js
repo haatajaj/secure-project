@@ -33,21 +33,20 @@ const Home = () => {
                     if (res.status === 200) {
                         return res.json();
                     } else if (res.status === 401) {
-                        throw new Error("Invalid Credentials")
+                        throw new Error("Invalid Credentials");
                     }
                 })
                 .then((data) => {
-                    //console.log(data);
                     setLoggedIn(true)
                     setUsername(data.sanitizedUser.username);
                     setEmail(data.sanitizedUser.email);
                     setFirstname(data.sanitizedUser.firstname);
-                    setLastname(data.sanitizedUser.lastname)
+                    setLastname(data.sanitizedUser.lastname);
                 })
                 .catch((err) => {
                     sessionStorage.removeItem("JWT_token");
-                    console.log("ERROR: " + err.message);
-                    setErrorMsg("Session Expired")
+                    setLoggedIn(false);
+                    setErrorMsg(err.message);
                 })
         } else {
             setLoggedIn(false);
