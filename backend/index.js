@@ -60,7 +60,7 @@ app.get("/auth", [
     try{
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
-            throw new Error("Validation error")
+            throw new Error("Express Validation Failed")
         }
         // JWT-token and fingerprint are recieved from the header
         let jwt_token = req.headers.authorization;
@@ -72,7 +72,7 @@ app.get("/auth", [
         // Fingerprint is hashed and checked against the hash in the JWT-token
         const hash = createHash("SHA256").update(randomStr).digest("base64");
         if(verifiedToken.sub !== hash) {
-            throw new Error("Invalid Credentials")
+            throw new Error("Fingerprint doesn't match")
         }
         
         // User is recieved from database
@@ -94,8 +94,7 @@ app.get("/auth", [
             sanitizedUser
         });
     } catch (err) {
-        // Whole error shown to backend
-        console.log(err);
+        console.log(err.message)
         // Errors caught and failed response sent
         res.status(401).send({
             message: "Invalid credentials"
@@ -116,12 +115,14 @@ app.post("/register", [
     try{
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
-            console.log(valRes);
-            throw new Error("Invalid user data")
+            throw new Error("Express-Validation failed")
         }
 
         // Passing values from JSON to explicit values that get stored
         const username = req.body.username;
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*"'()+,-./:;<=>?[\]^_`{|}~])(?=.{10,})/.test(req.body.password)) {
+            throw new Error("Invalid Password")
+        }
         const password = req.body.password;
         const email = req.body.email;
         const firstname = req.body.firstname;
@@ -170,8 +171,7 @@ app.post("/register", [
                 jwt_token
             });
         } catch (err) {
-            // Whole error shown to backend
-             console.log(err);
+            console.log(err.message)
             // Different types of errors are caught and information sent to the client, 
             // Will specify if username or email is already in use
             if(err.name == "MongoServerError") {
@@ -194,8 +194,7 @@ app.post("/register", [
             });
         }
     } catch (err) {
-        // Whole error shown to backend
-        console.log(err);
+        console.log(err.message)
         res.status(401).send({
             message: "User not registered"
         });
@@ -214,7 +213,7 @@ app.post("/login", [
     try {
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
-            throw new Error("Invalid credentials")
+            throw new Error("Express-Validation failed")
         }
         // Passing values from JSON to explicit values that are used in query and cheks
         const username = req.body.username;
@@ -222,12 +221,12 @@ app.post("/login", [
 
         const user = await User.findOne({username:username}).exec();
         if(user === null) {
-            throw new Error("Invalid credentials")
+            throw new Error("Username not found")
         }
 
         // Argon2id with a pepper is used to verify the password with the stored hash
         if(!await argon2.verify(user.password, password, {secret: Buffer.from(process.env.PEPPER)})) {
-            throw new Error("Invalid credentials")
+            throw new Error("Password incorrect")
         }
 
         // JWT is generated with additional context (fingerprint)
@@ -248,8 +247,7 @@ app.post("/login", [
             jwt_token
         });
     } catch (err) {
-        // Whole error shown to backend
-        console.log(err);
+        console.log(err.message)
         // Thrown errors are caught and depending on the message, response is sent
         if(err.message === "Invalid credentials") {
             return res.status(401).send({
