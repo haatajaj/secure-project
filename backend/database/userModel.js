@@ -6,7 +6,13 @@ const UserSchema = new mongoose.Schema({
         required: [true, "Provide an username"], 
         unique: [true, "Username already in use"],
         minLength: [6, "Username must be atleaset 6 letters"], 
-        maxLength: [12, "Username must be at most 12 letters"]
+        maxLength: [12, "Username must be at most 12 letters"],
+        validate: {
+            validator: function(val) {
+                return /^[0-9A-Za-z]$/.test(val);
+            },
+            message: "Invalid username"
+        }
     },
     password: {        
         type: String, 
