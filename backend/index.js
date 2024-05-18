@@ -54,20 +54,20 @@ const server = https.createServer(options, app)
 // If JWT-token is valid and the fingerprint matches, some user data is sent back to the client
 // Express validator is used to check that they exist and are strings, and lastly to sanitize the values
 app.get("/auth", [
-    check("jwt_token").notEmpty().isString().escape(),
-    check("__Secure-fingerprint").notEmpty().isString().escape(),
+    check("Authorization").notEmpty().isString().escape(),
+    check("Cookie").notEmpty().isString().escape(),
 ], async (req, res) => {
     try{
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
-            throw new Error("Validation Error")
+            throw new Error("Validation error")
         }
         // JWT-token and fingerprint are recieved from the header
         let jwt_token = req.headers.authorization;
         const randomStr = req.headers.cookie.split("=")[1];
 
         // JWT-token is verified, will thow JsonWebTokenError if not valid anymore
-        const verifiedToken = jwt.verify(jwt_token, process.env.JWT_TOKEN);
+        const verifiedToken = jwt.verify(jwt_token, process.env.JWT_SECRET);
 
         // Fingerprint is hashed and checked against the hash in the JWT-token
         const hash = createHash("SHA256").update(randomStr).digest("base64");
@@ -94,6 +94,8 @@ app.get("/auth", [
             sanitizedUser
         });
     } catch (err) {
+        // Whole error shown to backend
+        console.log(err);
         // Errors caught and failed response sent
         res.status(401).send({
             message: "Invalid credentials"
@@ -110,7 +112,7 @@ app.post("/register", [
     body("email").notEmpty().isString().escape(),
     body("firstname").notEmpty().isString().escape(),
     body("lastname").notEmpty().isString().escape(),
-    body("birthdate").notEmpty().isString().isDate().escape(),], async (req, res) => {
+    body("birthdate").notEmpty().isString().escape(),], async (req, res) => {
     try{
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
@@ -159,14 +161,17 @@ app.post("/register", [
                 httpOnly:true, 
                 sameSite:"strict", 
                 secure:true, 
-                maxAge: new Date(Date.now() + 30000)});
-    
+                maxAge: 300000}
+            );
+
             // Successful response contains the JWT in its body and the hardened cookie in its header
             return res.status(201).send({
                 message: "Registration succesful",
                 jwt_token
             });
         } catch (err) {
+            // Whole error shown to backend
+             console.log(err);
             // Different types of errors are caught and information sent to the client, 
             // Will specify if username or email is already in use
             if(err.name == "MongoServerError") {
@@ -174,21 +179,23 @@ app.post("/register", [
                     const val = Object.keys(err.keyValue)[0]
                     return res.status(401).send({
                         message: "Already in use",
-                        duplicate: val,
+                        value: val,
                     });
             // Also if validation fails
             }} else if(err.name == "ValidationError") {
                 const val = err.message.split(":").at(-1);
                 return res.status(401).send({
                     message: "Error during validation",
-                    duplicate: val,
+                    value: val,
                 });
             }
-            return res.status(400).send({
-                message: "Error during registration"
+            return res.status(401).send({
+                message: "User not registered"
             });
         }
     } catch (err) {
+        // Whole error shown to backend
+        console.log(err);
         res.status(401).send({
             message: "User not registered"
         });
@@ -207,7 +214,6 @@ app.post("/login", [
     try {
         const valRes = validationResult(req);
         if(!valRes.isEmpty()) {
-            console.log(valRes);
             throw new Error("Invalid credentials")
         }
         // Passing values from JSON to explicit values that are used in query and cheks
@@ -233,7 +239,7 @@ app.post("/login", [
             httpOnly:true, 
             sameSite:"strict", 
             secure:true, 
-            maxAge: new Date(Date.now() + 30000)}
+            maxAge: 30000}
         );
         
         // Successful response contains the JWT in its body and the hardened cookie in its header
@@ -242,6 +248,8 @@ app.post("/login", [
             jwt_token
         });
     } catch (err) {
+        // Whole error shown to backend
+        console.log(err);
         // Thrown errors are caught and depending on the message, response is sent
         if(err.message === "Invalid credentials") {
             return res.status(401).send({

@@ -14,7 +14,7 @@ const PasswordStrength = (prop) => {
     return (
         <div className="strengthContainer"> 
             <div className="strengthBar" style={
-                {width: widths[strength.id], "background-color": colors[strength.id]}} /> 
+                {width: widths[strength.id], "backgroundColor": colors[strength.id]}} /> 
         </div>
     );
 }

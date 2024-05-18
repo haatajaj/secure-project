@@ -1,0 +1,13 @@
+.infoGrid {
+    display: grid;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.userTable, td {
+    border: 1px solid black;
+}

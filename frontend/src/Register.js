@@ -33,7 +33,7 @@ const Register = () => {
 
     const [requestdErr, setrequestdErr] = useState("")
 
-    const contentStyle = { 'background': 'lightgray', 'font-size': '12px', 'max-width': '150px' };
+    const contentStyle = { 'background': 'lightgray', 'fontSize': '12px', 'maxWidth': '150px' };
     const arrowStyle = { color: 'lightgray' };
 
 
@@ -134,15 +134,22 @@ const Register = () => {
                     if(res.status === 201) {
                         return res.json();
                     } else if(res.status === 400) {
-                        throw new Error("Invalid values ,try again")
+                        return res.json();
                     } else {
                         throw new Error("Error occurred during registration") //Default
                     }
                     
                     })
                 .then((data) => {
-                    cookies.set("JWT_TOKEN", data.jwt_token)
-                    navigate("/");
+                    if(data.duplicate === "username") {
+                        setrequestdErr("Username already in use")
+                    } else if(data.duplicate === "email") {
+                        setrequestdErr("Email already in use")
+                    } else {
+                        sessionStorage.setItem("JWT_token", data.jwt_token)
+                        navigate("/");
+                    }
+
                 })
                 .catch((err) => {
                     console.log(err);
