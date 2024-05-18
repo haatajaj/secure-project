@@ -13,8 +13,5 @@
   "license": "ISC",
   "devDependencies": {
     "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "universal-cookie": "^7.1.4"
   }
 }

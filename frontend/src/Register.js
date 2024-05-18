@@ -53,7 +53,7 @@ const Register = () => {
             check = 1;
         }
         else if (!/^[0-9A-Za-z]{6,12}$/.test(username)) {
-            setUsernameErr("Must be over 6 letters")
+            setUsernameErr("Must be over 6 letters, and contain only letters and numbers")
             check = 1;
         }
 
