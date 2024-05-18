@@ -4,7 +4,6 @@ import fs from "fs";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import cors from "cors";
-import bodyParser from "body-parser";
 import hpp from "hpp";
 import {randomBytes, createHash} from "node:crypto";
 import { rateLimit } from "express-rate-limit"
@@ -13,11 +12,6 @@ import {body, check, validationResult } from "express-validator"
 import createJWT from "./jwt.js";
 import connectDb from "./database/connectDb.js";
 import User from "./database/userModel.js";
-import { strict } from "assert";
-import { log } from "console";
-import { subscribe } from "diagnostics_channel";
-
-
 
 const options = {
     key: fs.readFileSync("../.secret/localhost-key.pem"),
