@@ -10,7 +10,7 @@ import {randomBytes, createHash} from "node:crypto";
 import { rateLimit } from "express-rate-limit"
 import {body, check, validationResult } from "express-validator"
 
-
+import createJWT from "./jwt.js";
 import connectDb from "./database/connectDb.js";
 import User from "./database/userModel.js";
 import { strict } from "assert";
@@ -46,7 +46,7 @@ connectDb();
 
 const server = https.createServer(options, app)
 
-
+/*
 function createJWT(username) {
         // Create fingerprint for adding context to the jwt
         const randomStr = randomBytes(64).toString("hex");
@@ -61,7 +61,7 @@ function createJWT(username) {
             }
         );
         return [jwt_token, randomStr]
-};  
+};  */
 
 
 app.get("/", (req, res) => {
