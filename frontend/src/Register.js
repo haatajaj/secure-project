@@ -52,8 +52,8 @@ const Register = () => {
             setUsernameErr("Enter username")
             check = 1;
         }
-        else if (!/^[0-9A-Za-z]{4,12}$/.test(username)) {
-            setUsernameErr("Must be over 4 letters")
+        else if (!/^[0-9A-Za-z]{6,12}$/.test(username)) {
+            setUsernameErr("Must be over 6 letters")
             check = 1;
         }
 

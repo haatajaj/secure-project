@@ -23,6 +23,9 @@ const Login = () => {
         if(username === "") {
             setUsernameErr("Enter username")
             check = 1;
+        } else if (!/^[0-9A-Za-z]{1,50}$/.test(username)) {
+            setUsernameErr("Must contain only letters and numbers")
+            check = 1;
         }
 
         if(password === "") {
