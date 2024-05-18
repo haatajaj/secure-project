@@ -4,7 +4,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "./NavBar";
 import PasswordStrength from "./PasswordStrength";
-import Cookies from "universal-cookie";
 import Popup from 'reactjs-popup';
 
 import './Register.css';

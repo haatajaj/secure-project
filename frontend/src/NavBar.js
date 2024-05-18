@@ -6,8 +6,8 @@ const NavBar = () => {
         <nav>
             <ul>
                 <li><Link to="/">Home</Link></li>
-                <li><Link to="/login">Login</Link></li>
-                <li><Link to="/register">Register</Link></li>
+                <li><Link to={sessionStorage.getItem("JWT_token") ? '/' : '/login'}>Login</Link></li>
+                <li><Link to={sessionStorage.getItem("JWT_token") ? '/' : '/register'}>Register</Link></li>
             </ul>
         </nav>
     );

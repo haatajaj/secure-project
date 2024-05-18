@@ -2,10 +2,7 @@ import { useState } from "react";
 import React from "react";
 import NavBar from "./NavBar";
 import { useNavigate } from "react-router-dom";
-import Cookies from "universal-cookie";
 import './Register.css';
-
-const cookies = new Cookies(null, { path: '/' });
 
 const Login = () => {
     const [username, setUsername] = useState("")

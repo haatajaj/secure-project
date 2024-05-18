@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "./NavBar";
 import { useNavigate } from "react-router-dom";
-import Cookies from "universal-cookie";
 
 import "./Home.css";
 
@@ -37,11 +36,13 @@ const Home = () => {
                     }
                 })
                 .then((data) => {
-                    setLoggedIn(true)
-                    setUsername(data.sanitizedUser.username);
-                    setEmail(data.sanitizedUser.email);
-                    setFirstname(data.sanitizedUser.firstname);
-                    setLastname(data.sanitizedUser.lastname);
+                    if (sessionStorage.getItem("JWT_token")) {
+                        setLoggedIn(true)
+                        setUsername(data.sanitizedUser.username);
+                        setEmail(data.sanitizedUser.email);
+                        setFirstname(data.sanitizedUser.firstname);
+                        setLastname(data.sanitizedUser.lastname);
+                    }
                 })
                 .catch((err) => {
                     sessionStorage.removeItem("JWT_token");
@@ -63,18 +64,20 @@ const Home = () => {
                     </div>
                     <div className="userInfo">
                         <table className="userTable">
-                            <tr>
-                                <td>Username</td>
-                                <td>{username}</td>
-                            </tr>
-                            <tr>
-                                <td>Email</td>
-                                <td>{email}</td>
-                            </tr>
-                            <tr>
-                                <td>Name</td>
-                                <td>{firstname} {lastname}</td>
-                            </tr>
+                            <tbody>
+                                <tr>
+                                    <td>Username</td>
+                                    <td>{username}</td>
+                                </tr>
+                                <tr>
+                                    <td>Email</td>
+                                    <td>{email}</td>
+                                </tr>
+                                <tr>
+                                    <td>Name</td>
+                                    <td>{firstname} {lastname}</td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                     <div>
